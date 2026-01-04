@@ -63,3 +63,36 @@ systemctl restart kubelet
 - Control Plane :``` https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/#upgrading-control-plane-nodes```
 - Kubelet & Kubectl : ```https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/#upgrade-kubelet-and-kubectl```
 - Worker Nodes: ```https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/#upgrade-worker-nodes```
+
+# Backing up Etcd for cluster resources backup
+1. Backing up etcd:
+- ```etcdctl snapshot save snapshot.db```
+```
+etcdctl --endpoints=https://[127.0.0.1]:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+snapshot save /opt/snapshot-pre-boot.db
+```
+2. Restore:
+- ```systemctl stop kube-apiserver```
+- ```etcdutl snapshot restore /opt/snapshot-pre-boot.db --data-dir /var/lib/etcd-from-backup```
+This is saving the etcd cluster node members OR
+```
+  - hostPath:
+      path: /var/lib/<BACKUP_LOCATION>
+      type: DirectoryOrCreate
+    name: etcd-data
+```
+If self managed
+- ```systemctl daemon-reload```
+- ```systemctl restart etcd```
+- iif Env is managed, We might not have access to the etcd, So backing up for kube api (K get all --all-namespaces -oyaml >> backup.yaml )
+
+
+References:
+https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#backing-up-an-etcd-cluster
+
+https://github.com/etcd-io/website/blob/main/content/en/docs/v3.5/op-guide/recovery.md
+
+https://www.youtube.com/watch?v=qRPNuT080Hk
